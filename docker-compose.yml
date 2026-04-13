@@ -8,12 +8,12 @@ services:
       - ${PORT}:${PORT}
     env_file: .env
     depends_on:
-      db:
+      db_ticketera:
         condition: service_healthy
     networks:
       - ticketera-net
 
-  db:
+  db_ticketera:
     image: mariadb:latest
     container_name: ticketera-db
     ports:
