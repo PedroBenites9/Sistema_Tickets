@@ -31,6 +31,12 @@ export default function Login({ cambiarVista, setUsuarioActual }) {
         body: JSON.stringify(formulario)
       });
 
+      // const respuesta = await fetch('https://back-tickets-u01r.onrender.com/api/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formulario)
+      // });
+
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
@@ -151,7 +157,7 @@ export default function Login({ cambiarVista, setUsuarioActual }) {
       <ModalRecuperacion 
   mostrar={mostrarRecuperacion} 
   setMostrar={setMostrarRecuperacion} 
-  URL_API={'https://back-tickets-u01r.onrender.com/api'} // Asegúrate de pasarle la URL de tu backend
+  URL_API={'/api'} // Usamos ruta relativa
 />
     </div>
   )

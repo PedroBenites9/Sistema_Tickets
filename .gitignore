@@ -1,3 +1,10 @@
 .env
 mariadb_data/*
 !mariadb_data/.gitkeep
+.database
+.mariadb_data
+.env.example
+.docker-compose.yml
+.Dockerfile
+
+
