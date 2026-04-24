@@ -1,4 +1,5 @@
--- 1. Seleccionamos la base de datos
+-- 1. Seleccionamos la base de datos (y la creamos por si es un Docker nuevo)
+CREATE DATABASE IF NOT EXISTS sistema_tickets;
 USE sistema_tickets;
 
 -- ==============================================================================
@@ -10,6 +11,10 @@ DROP TABLE IF EXISTS tickets;
 DROP TABLE IF EXISTS tareas_diarias;
 DROP TABLE IF EXISTS clientes;
 DROP TABLE IF EXISTS usuarios;
+-- 👇 NUEVAS TABLAS MAESTRAS 👇
+DROP TABLE IF EXISTS areas;
+DROP TABLE IF EXISTS categorias_rutinas;
+DROP TABLE IF EXISTS frecuencias_permitidas;
 
 -- ==============================================================================
 -- 3. CREACIÓN DE TABLAS PRINCIPALES (Sin dependencias)
@@ -77,6 +82,26 @@ CREATE TABLE tareas_diarias (
     ultima_vez_completada DATETIME
 );
 
+-- 👇 NUEVAS TABLAS MAESTRAS 👇
+
+CREATE TABLE areas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    activa TINYINT(1) DEFAULT 1
+);
+
+CREATE TABLE categorias_rutinas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE frecuencias_permitidas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    nombre_mostrar VARCHAR(100) NOT NULL
+);
+
 -- ==============================================================================
 -- 4. CREACIÓN DE TABLAS HIJAS (Con Claves Foráneas / Foreign Keys)
 -- ==============================================================================
@@ -104,3 +129,30 @@ CREATE TABLE historial_tareas (
     fecha_completada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tarea_id) REFERENCES tareas_diarias(id) ON DELETE CASCADE
 );
+
+-- ==============================================================================
+-- 5. INSERCIÓN DE DATOS INICIALES (Para que el sistema no arranque vacío)
+-- ==============================================================================
+
+INSERT IGNORE INTO areas (codigo, nombre) VALUES 
+('Tesoreria', 'Tesorería'),
+('Sindico', 'Síndico'),
+('Operaciones', 'Operaciones'),
+('Comercial', 'Comercial'),
+('Logistica', 'Logística'),
+('RRHH', 'RRHH'),
+('Incorporaciones', 'Incorporaciones'),
+('Habilitaciones', 'Habilitaciones'),
+('Tecnologia', 'Tecnología (IT)'),
+('Presidencia', 'Presidencia'),
+('CoordinadorGral', 'Coordinador Gral.');
+
+INSERT IGNORE INTO categorias_rutinas (nombre) VALUES 
+('Limpieza / General'), ('CCTV y Servidores'), ('Redes'), ('Reportes');
+
+INSERT IGNORE INTO frecuencias_permitidas (codigo, nombre_mostrar) VALUES 
+('Diaria', 'Todos los días'),
+('Semanal', 'Una vez por semana'),
+('Mensual', 'Una vez al mes'),
+('Dias Especificos', 'Días Específicos'),
+('Fecha Unica', 'Fecha Única'); 
