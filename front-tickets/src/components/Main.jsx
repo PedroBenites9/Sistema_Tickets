@@ -157,10 +157,18 @@ export default function Main({ cambiarVista, usuario }) {
   // ==========================================
   const ticketAbierto = tickets.find(t => t.id === editandoId);
   
+  // Hook para hacer "latir" a React cada 1 minuto
+  const [ticker, setTicker] = useState(0);
 
   // ==========================================
   // 6. EFECTOS DE CARGA Y WEBSOCKETS
   // ==========================================
+  useEffect(() => {
+    // Actualiza el estado 'ticker' cada 60.000 ms (1 minuto)
+    const intervalo = setInterval(() => setTicker(t => t + 1), 60000);
+    return () => clearInterval(intervalo); // Limpieza cuando se cierra la pantalla
+}, []);
+
   useEffect(() => {
     // 1. Carga inicial tradicional (una sola vez)
     const obtenerDatos = async () => {
@@ -179,7 +187,6 @@ export default function Main({ cambiarVista, usuario }) {
       }
     };
     obtenerDatos();
-
   
     // ==================================================
     // 2. MAGIA WEBSOCKETS: TICKETS --> Escuchamos eventos en tiempo real
@@ -911,8 +918,23 @@ export default function Main({ cambiarVista, usuario }) {
                   <tbody>
                    {tareasFiltradas.length > 0 ? (tareasFiltradas.map(tarea => {
                         // Verificamos si la tarea ya se completó hoy
-                       const completadaHoy = fueCompletadaHoy(tarea.ultima_vez_completada);
-                       const tareaFutura = esTareaFutura(tarea.proxima_ejecucion);
+                        const completadaHoy = fueCompletadaHoy(tarea.ultima_vez_completada);
+                        const tareaFutura = esTareaFutura(tarea.proxima_ejecucion);
+
+                        // 👇 AGREGAMOS ESTA MATEMÁTICA ACÁ 👇
+                        let minutosMostrados = tarea.tiempo_acumulado_minutos || 0;
+                        
+                        // Si la tarea está corriendo, le sumamos la diferencia de tiempo en vivo
+                        if (tarea.estado === 'En Curso' && tarea.fecha_inicio_real) {
+                            // new Date() se actualiza gracias al "ticker" del Paso 1
+                            const milisegundosPasados = new Date() - new Date(tarea.fecha_inicio_real);
+                            const minutosExtra = milisegundosPasados / 1000 / 60;
+                            
+                            // Evitamos que muestre números negativos si hay un micro-desfase de servidor
+                            if (minutosExtra > 0) {
+                                minutosMostrados += minutosExtra;
+                            }
+                        }
                         // console.log(completadaHoy);
                         return (
                           <tr 
@@ -963,7 +985,6 @@ export default function Main({ cambiarVista, usuario }) {
                                   </button>
                                 </div>
                               ) : tareaFutura ? (
-                                /* NUEVO: SI ES DEL FUTURO, MOSTRAMOS UN RELOJ DE ARENA EN LUGAR DE LOS BOTONES */
                                 <div className="d-flex justify-content-center align-items-center gap-2">
                                   <span className="badge bg-light text-secondary border px-3 py-2 shadow-sm">
                                     ⏳ Esperando fecha
@@ -1015,13 +1036,17 @@ export default function Main({ cambiarVista, usuario }) {
                                     
                                   </div>
                                   
-                                  {/* Mostramos los minutos acumulados abajo de los botones */}
-                                  {tarea.tiempo_acumulado_minutos > 0 && !completadaHoy && (
-                                    <div className="text-muted mt-1" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                      ⏱️ {Math.floor(tarea.tiempo_acumulado_minutos)} min dedicados
-                                    </div>
-                                  )}
-                                
+                               {/* Mostramos los minutos acumulados y el cronómetro en vivo */}
+                                    {(tarea.estado === 'En Curso' || tarea.tiempo_acumulado_minutos >= 0) && !completadaHoy && (
+                                        <div className="text-muted mt-1 text-center w-100" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                            ⏱️ {Math.floor(minutosMostrados)} min dedicados
+                                            
+                                            {/* Indicador visual de que está corriendo */}
+                                            {tarea.estado === 'En Curso' && !tarea.en_pausa && (
+                                                <span className="ms-1 text-primary"> (corriendo...)</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                               )}
                               <button 
