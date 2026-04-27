@@ -1070,6 +1070,7 @@ export default function Main({ cambiarVista, usuario }) {
         mostrarModalTarea={mostrarModalTarea} setMostrarModalTarea={setMostrarModalTarea}
         formularioTarea={formularioTarea} setFormularioTarea={setFormularioTarea}
         manejarDias={manejarDias} guardarTarea={guardarTarea}
+        URL_API={URL_API}
       />
     </motion.div>
   );
