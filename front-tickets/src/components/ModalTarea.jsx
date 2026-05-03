@@ -12,6 +12,7 @@ const ModalTarea = ({
         const cargarOpciones = async () => {
             try {
                 const respuesta = await fetch(`${URL_API}/tareas/configuracion/opciones`);
+                console.log(`${URL_API}/tareas/configuracion/opciones`, respuesta);
                 const datos = await respuesta.json();
                 setOpciones(datos);
             } catch (error) {

@@ -45,7 +45,7 @@ const manejarDias = (dia) => {
   const guardarTarea = async (e) => {
     e.preventDefault();
     mostrarCarga();
-    try {
+    try { 
       const esEdicion = formularioTarea.id; // ¿Tiene ID? Entonces es edición
       const url = esEdicion ? `${URL_API}/tareas/${formularioTarea.id}` : `${URL_API}/tareas`;
       const metodo = esEdicion ? 'PUT' : 'POST';
@@ -67,8 +67,15 @@ const manejarDias = (dia) => {
           setTareas(tareasActualizadas);
         } catch (err) {
           console.error("Error al refrescar la tabla de rutinas:", err);
-        } finally {
-      ocultarCarga();
+        }
+      } else {
+        toast.error("Error al guardar la tarea.");
+      }
+    } catch (error) { 
+      console.error("Error de red al guardar la tarea:", error);
+      toast.error("Ocurrió un error de conexión.");
+    } finally {
+      ocultarCarga(); 
     }
   };
 
