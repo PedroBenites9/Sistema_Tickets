@@ -61,12 +61,13 @@ const manejarDias = (dia) => {
         setMostrarModalTarea(false);
         // Limpiamos el formulario (incluyendo el ID a null)
         setFormularioTarea({ id: null, titulo: '', categoria: 'Limpieza / General', frecuencia: 'Dias Especificos', hora_programada: '09:00', dias_especificos: [], fecha_unica: '' });
-      } else {
-        toast.error("Error al guardar la tarea.");
-      }
-    } catch (error) {
-      toast.error("Error de conexión al servidor.");
-    } finally {
+        try {
+          const resTareas = await fetch(`${URL_API}/tareas`);
+          const tareasActualizadas = await resTareas.json();
+          setTareas(tareasActualizadas);
+        } catch (err) {
+          console.error("Error al refrescar la tabla de rutinas:", err);
+        } finally {
       ocultarCarga();
     }
   };
