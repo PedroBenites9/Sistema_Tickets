@@ -19,13 +19,13 @@ router.post('/registro', async (req, res) => {
         const passwordEncriptada = await bcrypt.hash(password, saltos);
 
         // 2. Insertamos datos
-        const query = `INSERT INTO usuarios (nombre, email, password, area) VALUES (?, ?, ?, ?)`;
-        const [resultado] = await pool.query(query, [nombre, email, passwordEncriptada, area || 'Sin Asignar']);
+        const query = `INSERT INTO usuarios (nombre, email, password, id_area) VALUES (?, ?, ?, ?)`;
+        const [resultado] = await pool.query(query, [nombre, email, passwordEncriptada, area || null]);
 
         // 3. MariaDB nos devuelve el insertId
         res.status(201).json({
             mensaje: "Usuario creado exitosamente",
-            usuario: { id: resultado.insertId, nombre, email, area: area || 'Sin Asignar' }
+            usuario: { id: resultado.insertId, nombre, email, id_area: area || null }
         });
     } catch (error) {
         console.error(error);
@@ -37,15 +37,32 @@ router.post('/registro', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const [usuarios] = await pool.query('SELECT id, nombre, email, password, rol, area FROM usuarios WHERE email = ? AND status = 1', [email]);
+
+        // 1. Hacemos el JOIN para traer la contraseña, pero también traducir los IDs a palabras
+        // ✅ CORRECCIÓN:
+        const query = `SELECT id, nombre, email, password, id_rol, id_area FROM usuarios WHERE email = ?`;
+        const [usuarios] = await pool.query(query, [email]);
 
         if (usuarios.length === 0) return res.status(401).json({ error: "Usuario no encontrado" });
 
         const usuario = usuarios[0];
+
         if (!await bcrypt.compare(password, usuario.password)) return res.status(401).json({ error: "Contraseña incorrecta" });
 
-        const token = jwt.sign({ id: usuario.id, rol: usuario.rol }, process.env.JWT_SECRET, { expiresIn: '2h' });
-        res.json({ mensaje: "Login exitoso", token, usuario: { id: usuario.id, nombre: usuario.nombre, rol: usuario.rol, area: usuario.area } });
+        // 2. Como ahora sí existe usuario.rol, el token se va a armar perfecto
+        // ✅ Usamos id_rol para el token
+        const token = jwt.sign({ id: usuario.id, id_rol: usuario.id_rol }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        // 3. Le mandamos a React "rol" y "area" como textos, así no tenés que tocar nada en tu Frontend
+        res.json({
+            mensaje: "Login exitoso",
+            token,
+            usuario: {
+                id: usuario.id,
+                nombre: usuario.nombre,
+                id_rol: usuario.id_rol,
+                id_area: usuario.id_area
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error en el servidor al iniciar sesión" });

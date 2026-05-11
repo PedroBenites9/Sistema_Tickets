@@ -112,13 +112,12 @@ export default function Register({ cambiarVista }) {
             >
               <option value="" disabled>Seleccione su Área...</option>
               {areasDisponibles.map((area) => (
-                <option key={area.codigo} value={area.codigo}>
+                <option key={area.codigo} value={area.id}>
                   {area.nombre}
                 </option>
               ))}
               </select>
-              {console.log(areasDisponibles)}
-              <button type="submit" className="btn btn-success w-100">
+                <button type="submit" className="btn btn-success w-100">
                 Registrarme
               </button>
             </form>

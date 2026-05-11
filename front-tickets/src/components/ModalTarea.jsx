@@ -12,7 +12,6 @@ const ModalTarea = ({
         const cargarOpciones = async () => {
             try {
                 const respuesta = await fetch(`${URL_API}/tareas/configuracion/opciones`);
-                console.log(`${URL_API}/tareas/configuracion/opciones`, respuesta);
                 const datos = await respuesta.json();
                 setOpciones(datos);
             } catch (error) {
@@ -20,7 +19,7 @@ const ModalTarea = ({
             }
         };
         cargarOpciones();
-    }, [URL_API]); // Es buena práctica pasarle URL_API acá
+    }, [URL_API]); 
 
     // 2. RECIÉN AHORA EL RETURN TEMPRANO
     if (!mostrarModalTarea) return null;
@@ -94,7 +93,7 @@ const ModalTarea = ({
                       />
                   </div>
               </div>
-              {formularioTarea.frecuencia === 'Dias Especificos' && (
+              {formularioTarea.frecuencia === 'Dias Especificos' ? (
                 <div className="mb-3 p-3 bg-light border rounded shadow-sm">
                   <div className="d-flex flex-wrap gap-2 justify-content-between">
                     {[{id: 1, label: 'Lun'}, {id: 2, label: 'Mar'}, {id: 3, label: 'Mié'}, {id: 4, label: 'Jue'}, {id: 5, label: 'Vie'}, {id: 6, label: 'Sáb'}, {id: 0, label: 'Dom'}].map(dia => (
@@ -104,11 +103,31 @@ const ModalTarea = ({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-              {formularioTarea.frecuencia === 'Fecha Unica' && (
-                  <input type="date" className="form-control" value={formularioTarea.fecha_unica} onChange={(e) => setFormularioTarea({...formularioTarea, fecha_unica: e.target.value})} required />
-              )}
+                </div>            
+                   ) : (
+                    /* 2. VISTA PARA EL RESTO DE LAS FRECUENCIAS (Calendario) */
+                    <div className="mb-3">
+                      <label className="form-label text-secondary fw-bold" style={{ fontSize: '0.9rem' }}>
+                        {formularioTarea.frecuencia === 'Fecha Unica' 
+                          ? 'Seleccione la fecha exacta' 
+                          : 'Fecha de Inicio (Primera Ejecución)'}
+                      </label>
+                      <input 
+                        type="date" 
+                        className="form-control shadow-sm"
+                        value={formularioTarea.fecha_unica} 
+                        onChange={(e) => setFormularioTarea({ ...formularioTarea, fecha_unica: e.target.value })}
+                        required
+                      />
+                      {formularioTarea.frecuencia !== 'Fecha Unica' && (
+                        <div className="form-text mt-1" style={{ fontSize: '0.8rem' }}>
+                          A partir de esta fecha, el sistema calculará los próximos saltos automáticamente.
+                        </div>
+                      )}
+                    </div>
+
+                  )    
+            }
             </form>
           </div>
           <div className="modal-footer bg-light">

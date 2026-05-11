@@ -42,7 +42,7 @@ const manejarDias = (dia) => {
     });
 };
 
-  const guardarTarea = async (e) => {
+ const guardarTarea = async (e) => {
     e.preventDefault();
     mostrarCarga();
     try { 
@@ -79,12 +79,16 @@ const manejarDias = (dia) => {
     }
   };
 
-  const marcarTareaCompletada = async (id) => {
+  const marcarTareaCompletada = async (id, formData) => {
     try {
+      // Agregamos el usuario al FormData si no viene
+      if (!formData.has('usuario')) {
+        formData.append('usuario', usuario);
+      }
+
       const respuesta = await fetch(`${URL_API}/tareas/${id}/completar`, { 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario: usuario }) 
+        body: formData 
       });
       if (!respuesta.ok) throw new Error("El servidor falló al completar la tarea");
       
@@ -95,18 +99,40 @@ const manejarDias = (dia) => {
       });
       toast.success("¡Excelente! Tarea completada. Quedó reprogramada.");
     } catch (error) {
+      console.error(error);
       toast.error("Error al actualizar la rutina.");
     }
   };
 
-  const iniciarTarea = async (id) => {
+const iniciarTarea = async (id) => {
     try {
-      await fetch(`${URL_API}/tareas/${id}/iniciar`, { method: 'PUT' });
-      toast.success("▶ Cronómetro iniciado. ¡A trabajar!");
+        // 1. Guardamos la respuesta del backend en una variable
+        const respuesta = await fetch(`${URL_API}/tareas/${id}/iniciar`, { method: 'PUT' });
+        
+        // 2. Le preguntamos a fetch si el status HTTP fue exitoso (ej: 200)
+        if (!respuesta.ok) {
+            // Si el backend falló, forzamos a que salte al 'catch' de abajo
+            throw new Error("El servidor no pudo actualizar la tarea");
+        }
+
+        // 3. Si llegó hasta acá, es porque en la base de datos SÍ se guardó
+        toast.success("▶ Cronómetro iniciado. ¡A trabajar!");
+
+        // 4. Refrescamos la tabla
+        try {
+            const resTareas = await fetch(`${URL_API}/tareas`);
+            const tareasActualizadas = await resTareas.json();
+            setTareas(tareasActualizadas);
+        } catch (err) {
+            console.error("Error al refrescar la tabla de rutinas:", err);
+        }
+
     } catch (error) {
-      toast.error("Error al iniciar la tarea.");
+        // Ahora sí, si falla la DB, va a caer acá y mostrar el cartel rojo
+        console.error("Error en iniciarTarea:", error);
+        toast.error("Error al iniciar la tarea. Revisá la consola del Backend.");
     }
-  };
+};
 
 // NUEVO: Función para saber si la tarea está programada para mañana o más adelante
   const esTareaFutura = (fechaString) => {
@@ -127,6 +153,13 @@ const manejarDias = (dia) => {
     try {
       await fetch(`${URL_API}/tareas/${id}/pausar`, { method: 'PUT' });
       toast.warning("⏸ Tarea pausada. El tiempo se ha guardado.");
+      try {
+        const resTareas = await fetch(`${URL_API}/tareas`);
+        const tareasActualizadas = await resTareas.json();
+        setTareas(tareasActualizadas);
+      } catch (err) {
+        console.error("Error al refrescar la tabla de rutinas:", err);
+      }
     } catch (error) {
       toast.error("Error al pausar la tarea.");
     }
@@ -162,7 +195,9 @@ const manejarDias = (dia) => {
         "Hora de Inicio": registro.fecha_inicio ? new Date(registro.fecha_inicio).toLocaleTimeString() : 'Sin registro',
         "Fecha de Finalización": new Date(registro.fecha_completada).toLocaleDateString(),
         "Hora de Finalización": new Date(registro.fecha_completada).toLocaleTimeString(),
-        "Tiempo de Ejecución Real": registro.tiempo_total_minutos ? `${Math.round(registro.tiempo_total_minutos)} min` : 'Sin registro'
+        "Tiempo de Ejecución Real": registro.tiempo_total_minutos ? `${Math.round(registro.tiempo_total_minutos)} min` : 'Sin registro',
+        "Comentario": registro.comentario || 'Sin comentario',
+        "Evidencia (Archivo)": registro.archivo_adjunto ? `${URL_API.startsWith('http') ? URL_API : window.location.origin + URL_API}/tareas/archivo/${registro.archivo_adjunto.split(/[\\/]/).pop()}` : 'Sin archivo'
       }));  
       const hoja = XLSX.utils.json_to_sheet(datosParaExcel);
       const libro = XLSX.utils.book_new();
@@ -278,7 +313,6 @@ const manejarDias = (dia) => {
         ...tarea,
         dias_especificos: diasLimpios 
     });
-    console.log(formularioTarea);
     // 3. Recién ahora abrimos el modal
     setMostrarModalTarea(true); // O la variable que uses para abrirlo
 };
