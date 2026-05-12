@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -85,3 +86,8 @@ typings/
 #Local Uploads
 
 localUploads/
+=======
+.env
+mariadb_data/*
+!mariadb_data/.gitkeep
+>>>>>>> notebook_cdm

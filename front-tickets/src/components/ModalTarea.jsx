@@ -1,0 +1,145 @@
+import { useState, useEffect } from 'react';
+const ModalTarea = ({
+    mostrarModalTarea, setMostrarModalTarea,
+    formularioTarea, setFormularioTarea, manejarDias, guardarTarea,
+    URL_API
+}) => {
+    
+    // 1. PRIMERO SIEMPRE LOS HOOKS
+    const [opciones, setOpciones] = useState({ categorias: [], frecuencias: [] });
+
+    useEffect(() => {
+        const cargarOpciones = async () => {
+            try {
+                const respuesta = await fetch(`${URL_API}/tareas/configuracion/opciones`);
+                const datos = await respuesta.json();
+                setOpciones(datos);
+            } catch (error) {
+                console.error("Error cargando opciones del servidor", error);
+            }
+        };
+        cargarOpciones();
+    }, [URL_API]); 
+
+    // 2. RECIÉN AHORA EL RETURN TEMPRANO
+    if (!mostrarModalTarea) return null;
+  return (
+    <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header bg-light">
+            <h5 className="modal-title fw-bold text-secondary">
+            {formularioTarea.id ? "✏️ Editar Rutina" : "Programar Rutina"}
+            </h5>
+            <button type="button" className="btn-close" onClick={() => setMostrarModalTarea(false)}></button>
+          </div>
+          <div className="modal-body">
+            <form id="formTarea" onSubmit={guardarTarea}>
+              <div className="mb-3">
+                <label className="form-label fw-bold">¿Qué se debe realizar?</label>
+                <input type="text" className="form-control" value={formularioTarea.titulo} onChange={(e) => setFormularioTarea({...formularioTarea, titulo: e.target.value})} required />
+              </div>
+              <div className="mb-3">
+                
+            {/* SELECT DE CATEGORÍA DINÁMICO */}
+                <label className="form-label fw-bold">Categoría</label>
+                <select 
+                  className="form-select border-primary" 
+                  value={formularioTarea.categoria || ''} 
+                  onChange={(e) => setFormularioTarea({ ...formularioTarea, categoria: e.target.value })}
+                  required
+                  >
+                  <option value="">Seleccione Categoría...</option>
+                  {opciones.categorias.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+             <div className="row">
+                  <div className="col-6 mb-3">
+                      <label className="form-label fw-bold">Frecuencia</label>
+                      <select 
+                          className="form-select"
+                          value={formularioTarea.frecuencia || ''}
+                          onChange={(e) => {
+                              const nuevaFrecuencia = e.target.value;
+                              setFormularioTarea({
+                                  ...formularioTarea,
+                                  frecuencia: nuevaFrecuencia,
+                                  dias_especificos: nuevaFrecuencia === 'Fecha Unica' ? [] : formularioTarea.dias_especificos,
+                                  fecha_unica: nuevaFrecuencia === 'Dias Especificos' ? '' : formularioTarea.fecha_unica
+                              });
+                          }}
+                          required
+                      >
+                          <option value="">Seleccione...</option>
+                          {opciones.frecuencias.map((frec) => (
+                              <option key={frec.codigo} value={frec.codigo}>
+                                  {frec.nombre_mostrar}
+                              </option>
+                          ))}
+                      </select>
+                  </div>
+
+                  <div className="col-6 mb-3">
+                      <label className="form-label fw-bold">Hora Límite</label>
+                      <input 
+                          type="time"
+                          className="form-control"
+                          value={formularioTarea.hora_programada || ''}
+                          onChange={(e) => setFormularioTarea({...formularioTarea, hora_programada: e.target.value})}
+                          required
+                      />
+                  </div>
+              </div>
+              {formularioTarea.frecuencia === 'Dias Especificos' ? (
+                <div className="mb-3 p-3 bg-light border rounded shadow-sm">
+                  <div className="d-flex flex-wrap gap-2 justify-content-between">
+                    {[{id: 1, label: 'Lun'}, {id: 2, label: 'Mar'}, {id: 3, label: 'Mié'}, {id: 4, label: 'Jue'}, {id: 5, label: 'Vie'}, {id: 6, label: 'Sáb'}, {id: 0, label: 'Dom'}].map(dia => (
+                      <div className="form-check form-check-inline me-0" key={dia.id}>
+                        <input className="form-check-input" type="checkbox" checked={formularioTarea.dias_especificos?.includes(dia.id)} onChange={() => manejarDias(dia.id)} />
+                        <label className="form-check-label small">{dia.label}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>            
+                   ) : (
+                    /* 2. VISTA PARA EL RESTO DE LAS FRECUENCIAS (Calendario) */
+                    <div className="mb-3">
+                      <label className="form-label text-secondary fw-bold" style={{ fontSize: '0.9rem' }}>
+                        {formularioTarea.frecuencia === 'Fecha Unica' 
+                          ? 'Seleccione la fecha exacta' 
+                          : 'Fecha de Inicio (Primera Ejecución)'}
+                      </label>
+                      <input 
+                        type="date" 
+                        className="form-control shadow-sm"
+                        value={formularioTarea.fecha_unica} 
+                        onChange={(e) => setFormularioTarea({ ...formularioTarea, fecha_unica: e.target.value })}
+                        required
+                      />
+                      {formularioTarea.frecuencia !== 'Fecha Unica' && (
+                        <div className="form-text mt-1" style={{ fontSize: '0.8rem' }}>
+                          A partir de esta fecha, el sistema calculará los próximos saltos automáticamente.
+                        </div>
+                      )}
+                    </div>
+
+                  )    
+            }
+            </form>
+          </div>
+          <div className="modal-footer bg-light">
+            <button type="button" className="btn btn-secondary" onClick={() => setMostrarModalTarea(false)}>Cancelar</button>
+            <button type="submit" form="formTarea" className="btn btn-success">
+              {formularioTarea.id ? "Guardar Cambios" : "Guardar Rutina"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ModalTarea;
