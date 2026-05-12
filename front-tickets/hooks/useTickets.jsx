@@ -104,30 +104,7 @@ export const useTickets = (URL_API, usuario, mostrarCarga, ocultarCarga) => {
       toast.error("Error al guardar la nota.");
     }
   };
-
-// const cargarTickets = async () => {
-//     const idRol = localStorage.getItem('rol_usuario');
-//     const idArea = localStorage.getItem('area_usuario');
-
-//     // 🚨 Si los IDs son 0 o undefined, ni siquiera intentamos
-//     if (!idRol || idRol === '0' || idRol === 'undefined') return;
-
-//     try {
-//         const url = `${URL_API}/tickets?id_rol=${idRol}&id_area=${idArea}`;
-//         const response = await fetch(url);
-//         const data = await response.json();        
-//         if (Array.isArray(data)) {
-//             setTickets(data); // 👈 Esto debe disparar el re-render en Main.jsx
-//         }
-//     } catch (error) {
-//         console.error("Error:", error);
-//     }
-// };
-
-//  useEffect(() => {
-//       cargarTickets();
-//     }, []);
-    
+  
 const guardarTicket = async (e) => {
     e.preventDefault();
     mostrarCarga();
